@@ -1,0 +1,20 @@
+services:
+  cpa-health-dashboard:
+    build: .
+    container_name: cpa-health-dashboard
+    restart: unless-stopped
+    ports:
+      - "18317:18317"
+    environment:
+      PORT: "18317"
+      CPA_BASE_URL: "http://host.docker.internal:8317"
+      CPA_MANAGEMENT_KEY: "replace-me"
+      DB_PATH: "/app/data/health-dashboard.sqlite"
+      POLL_INTERVAL_MS: "1000"
+      QUEUE_BATCH_SIZE: "100"
+      MAPPING_REFRESH_MS: "300000"
+      RECENT_WINDOW_MINUTES: "15"
+    volumes:
+      - ./data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

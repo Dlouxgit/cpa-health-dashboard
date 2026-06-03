@@ -154,6 +154,30 @@ node src/server.mjs
 
 ---
 
+
+## Run with Docker
+
+### Docker
+
+```bash
+docker build -t cpa-health-dashboard .
+
+docker run -d   --name cpa-health-dashboard   -p 18317:18317   -e CPA_BASE_URL=http://host.docker.internal:8317   -e CPA_MANAGEMENT_KEY=replace-me   -e DB_PATH=/app/data/health-dashboard.sqlite   -v $(pwd)/data:/app/data   --add-host=host.docker.internal:host-gateway   cpa-health-dashboard
+```
+
+### Docker Compose
+
+```bash
+# 先把 docker-compose.yml 里的 CPA_MANAGEMENT_KEY 改成你自己的值
+docker compose up -d --build
+```
+
+### Notes
+
+- 如果 CPA 跑在宿主机，容器里通常用 `http://host.docker.internal:8317`
+- 如果 CPA 跑在别的容器里，请把 `CPA_BASE_URL` 改成对应容器服务名
+- `usage-queue` 是消费型队列，请不要让多个 collector 同时连接同一个 CPA
+
 ## Import history from CPA-Manager
 
 如果你之前在使用 `CPA-Manager`，可以导入它的历史 SQLite：
