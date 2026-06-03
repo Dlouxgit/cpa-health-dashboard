@@ -190,45 +190,6 @@ node scripts/import-from-cpa-manager.mjs /path/to/usage.sqlite
 
 ---
 
-## Privacy / security
-
-不要提交这些文件：
-
-- `config.local.json`
-- `.env`
-- `data/*.sqlite`
-- `data/server.log`
-- `data/server.pid`
-
-管理密钥请通过环境变量或本地配置文件注入，不要写进仓库。
-
----
-
-## Suggested GitHub description
-
-> Local health dashboard for CLIProxyAPI/CPA. Consumes usage-queue, stores events in SQLite, and shows line health, OAuth account health, errors, latency, and token usage.
-
-## Suggested repository topics
-
-```text
-cpa
-cliproxyapi
-dashboard
-monitoring
-observability
-sqlite
-health-check
-token-usage
-```
-
----
-
-## Release notes template
-
-See `.github/RELEASE_TEMPLATE_v0.1.0.md`.
-
----
-
 ## License
 
 MIT
