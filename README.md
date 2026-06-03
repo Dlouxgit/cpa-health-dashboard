@@ -137,6 +137,9 @@ export RECENT_WINDOW_MINUTES=15
 
 ## Quick start
 
+> 推荐优先使用 **Docker / Docker Compose** 方式启动。
+
+
 ### Start
 
 ```bash
@@ -170,7 +173,7 @@ node src/server.mjs
 ---
 
 
-## Run with Docker
+## Run with Docker（推荐）
 
 ### Docker
 
@@ -224,6 +227,12 @@ node scripts/import-from-cpa-manager.mjs /path/to/usage.sqlite
 > 注意：如果旧数据源里已经是截断错误文本，则无法恢复为完整错误正文。
 
 ---
+
+---
+
+## 社区
+
+本项目链接并认可 [LINUX DO](https://linux.do/) 社区。欢迎在社区讨论帖中交流使用体验、问题和改进建议。
 
 ## License
 
