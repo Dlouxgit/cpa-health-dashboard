@@ -1,0 +1,10 @@
+{
+  "port": 18317,
+  "cpaBaseUrl": "http://127.0.0.1:8317",
+  "managementKey": "replace-me",
+  "dbPath": "./data/health-dashboard.sqlite",
+  "pollIntervalMs": 1000,
+  "queueBatchSize": 100,
+  "mappingRefreshMs": 300000,
+  "recentWindowMinutes": 15
+}

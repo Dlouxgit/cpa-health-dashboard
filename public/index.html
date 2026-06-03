@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CPA Health Dashboard</title>
+    <style>
+      :root { color-scheme: dark; }
+      body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; background: #0b1220; color: #e5eefb; }
+      header { padding: 20px 24px; border-bottom: 1px solid #1f2a44; position: sticky; top: 0; background: rgba(11,18,32,.95); backdrop-filter: blur(10px); }
+      .header-layout { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "hero token" "toolbar token"; align-items: start; gap: 16px 18px; }
+      .header-hero { grid-area: hero; min-width: 0; }
+      h1 { margin: 0 0 8px; font-size: 24px; }
+      .sub { color: #94a3b8; font-size: 13px; }
+      .token-summary { grid-area: token; min-width: 280px; background: rgba(17,26,47,.9); border: 1px solid #334155; border-radius: 12px; padding: 12px 14px; align-self: start; }
+      .token-summary-title { color: #93c5fd; font-size: 12px; margin-bottom: 6px; }
+      .token-summary-total { font-size: 26px; font-weight: 700; line-height: 1.1; margin-bottom: 6px; }
+      .token-summary-breakdown { display: flex; flex-wrap: wrap; gap: 6px 12px; color: #94a3b8; font-size: 12px; }
+      .toolbar { grid-area: toolbar; display: flex; gap: 12px; flex-wrap: wrap; min-width: 0; }
+      input, select, button { background: #111a2f; color: #e5eefb; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; }
+      button { cursor: pointer; }
+      main { padding: 20px 24px 48px; }
+      .card, .panel { background: #111827; border: 1px solid #1f2937; border-radius: 14px; padding: 16px; box-shadow: 0 10px 20px rgba(0,0,0,.18); }
+      .card .label { color: #94a3b8; font-size: 12px; margin-bottom: 8px; }
+      .card .value { font-size: 28px; font-weight: 700; }
+      .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+      table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+      th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #1f2937; vertical-align: top; }
+      th { color: #93c5fd; font-weight: 600; }
+      .status { display: inline-block; padding: 4px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+      .healthy { background: rgba(34,197,94,.15); color: #4ade80; }
+      .warning { background: rgba(245,158,11,.16); color: #fbbf24; }
+      .critical { background: rgba(239,68,68,.16); color: #f87171; }
+      .idle { background: rgba(148,163,184,.16); color: #cbd5e1; }
+      .muted { color: #94a3b8; }
+      .section-title { margin: 0 0 4px; font-size: 18px; }
+      .section-sub { margin: 0 0 14px; color: #94a3b8; font-size: 13px; }
+      .row-meta { display: flex; flex-wrap: wrap; gap: 6px 10px; color: #94a3b8; font-size: 12px; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .actions { display: flex; gap: 8px; }
+      .nowrap { white-space: nowrap; }
+      .error-cell { max-width: 320px; white-space: normal; word-break: break-word; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+      .compact-cell { max-width: 120px; }
+      .error-actions { margin-top: 6px; }
+      .error-link { background: transparent; border: 0; color: #93c5fd; padding: 0; font-size: 12px; cursor: pointer; }
+      .error-link:hover { text-decoration: underline; }
+      .modal-backdrop { position: fixed; inset: 0; background: rgba(2, 6, 23, .78); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 50; }
+      .modal-backdrop[hidden] { display: none !important; }
+      .modal { width: min(960px, 100%); max-height: 80vh; overflow: hidden; background: #0f172a; border: 1px solid #334155; border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,.45); }
+      .modal-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #1f2937; }
+      .modal-title { margin: 0; font-size: 18px; }
+      .modal-body { padding: 18px; }
+      .modal-pre { margin: 0; white-space: pre-wrap; word-break: break-word; max-height: 60vh; overflow: auto; font-size: 13px; line-height: 1.5; color: #e2e8f0; }
+      @media (max-width: 980px) {
+        .header-layout {
+          grid-template-columns: 1fr;
+          grid-template-areas:
+            "hero"
+            "token"
+            "toolbar";
+        }
+        .token-summary { min-width: 0; }
+      }
+
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-layout">
+        <div class="header-hero">
+          <h1>CPA Health Dashboard</h1>
+          <div class="sub">按供应商、渠道、账号查看本地调用健康度。API key 渠道显示渠道名；有邮箱的账号显示邮箱。</div>
+        </div>
+        <div class="token-summary">
+          <div class="token-summary-title">当前窗口总 Token</div>
+          <div class="token-summary-total" id="token-total">-</div>
+          <div class="token-summary-breakdown">
+            <span id="token-input">输入 -</span>
+            <span id="token-output">输出 -</span>
+            <span id="token-reasoning">推理 -</span>
+            <span id="token-cached">缓存 -</span>
+          </div>
+        </div>
+        <div class="toolbar">
+          <input id="search" placeholder="搜索渠道 / 供应商 / 账号 / 模型 / 错误" style="min-width: 260px" />
+          <select id="window">
+            <option value="15m">最近 15 分钟</option>
+            <option value="1h" selected>最近 1 小时</option>
+            <option value="24h">最近 24 小时</option>
+            <option value="7d">最近 7 天</option>
+            <option value="all">全部</option>
+          </select>
+          <div class="actions">
+            <button id="refresh">刷新</button>
+            <button id="poll-now">立即拉取 Queue</button>
+            <button id="refresh-mappings">刷新映射</button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <main>
+      <section class="grid">
+        <div class="panel">
+          <h2 class="section-title">线路健康度</h2>
+          <p class="section-sub">按实际上游线路展示（通常可理解为 base API URL 对应的一条可用线路）；同名线路已自动补数字。</p>
+          <div id="channels"></div>
+        </div>
+        <div class="panel">
+          <h2 class="section-title">OAuth 账号健康度</h2>
+          <p class="section-sub">这里只显示有真实邮箱的 OAuth / Auth File 账号，不再混入纯 API key 渠道。</p>
+          <div id="accounts"></div>
+        </div>
+        <div class="panel">
+          <h2 class="section-title">最近事件</h2>
+          <p class="section-sub">快速查看最近调用波动和错误。</p>
+          <div id="events"></div>
+        </div>
+      </section>
+    </main>
+    <div id="error-modal" class="modal-backdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="error-modal-title">
+        <div class="modal-header">
+          <h3 id="error-modal-title" class="modal-title">完整错误内容</h3>
+          <button id="error-modal-close" type="button">关闭</button>
+        </div>
+        <div class="modal-body">
+          <pre id="error-modal-content" class="modal-pre"></pre>
+        </div>
+      </div>
+    </div>
+    <script>
+      const els = {
+        search: document.getElementById('search'),
+        window: document.getElementById('window'),
+        refresh: document.getElementById('refresh'),
+        pollNow: document.getElementById('poll-now'),
+        refreshMappings: document.getElementById('refresh-mappings'),
+        tokenTotal: document.getElementById('token-total'),
+        tokenInput: document.getElementById('token-input'),
+        tokenOutput: document.getElementById('token-output'),
+        tokenReasoning: document.getElementById('token-reasoning'),
+        tokenCached: document.getElementById('token-cached'),
+        channels: document.getElementById('channels'),
+        accounts: document.getElementById('accounts'),
+        events: document.getElementById('events'),
+        errorModal: document.getElementById('error-modal'),
+        errorModalClose: document.getElementById('error-modal-close'),
+        errorModalContent: document.getElementById('error-modal-content')
+      };
+
+      if (els.errorModal) els.errorModal.hidden = true;
+
+      function statusClass(status) { return status || 'idle'; }
+      function timeAgo(ts) {
+        if (!ts) return '-';
+        const delta = Math.max(0, Date.now() - ts);
+        const sec = Math.floor(delta / 1000);
+        if (sec < 60) return sec + 's ago';
+        const min = Math.floor(sec / 60);
+        if (min < 60) return min + 'm ago';
+        const hr = Math.floor(min / 60);
+        if (hr < 24) return hr + 'h ago';
+        return Math.floor(hr / 24) + 'd ago';
+      }
+      function pct(v) { return v == null ? '-' : v + '%'; }
+      function number(v) { return v == null ? '-' : v; }
+      function latency(v) { return v == null ? '-' : Math.round(v) + 'ms'; }
+      function formatTokens(v) {
+        const n = Number(v || 0);
+        if (!Number.isFinite(n)) return '-';
+        if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+        if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+        return String(Math.round(n));
+      }
+      function esc(s) { return String(s ?? '').replace(/[&<>\"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+      function encodeData(s) { return encodeURIComponent(String(s ?? '')); }
+      function decodeData(s) { try { return decodeURIComponent(s || ''); } catch { return String(s || ''); } }
+
+      function renderTable(rows, columns, empty='暂无数据') {
+        if (!rows.length) return `<div class="muted">${empty}</div>`;
+        const head = columns.map(col => `<th>${esc(col.label)}</th>`).join('');
+        const body = rows.map(row => `<tr>${columns.map(col => `<td>${col.render(row)}</td>`).join('')}</tr>`).join('');
+        return `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+      }
+
+      function renderErrorPreview(message, fullMessage = message) {
+        const text = String(message || '-');
+        const fullText = String(fullMessage || text || '-');
+        const safeText = esc(text);
+        const preview = `<div class="muted error-cell" title="${safeText}">${safeText}</div>`;
+        if (!text || text === '-') return preview;
+        return `${preview}<div class="error-actions"><button type="button" class="error-link js-show-error" data-error="${encodeData(fullText)}">查看完整错误</button></div>`;
+      }
+
+      function openErrorModal(message) {
+        els.errorModalContent.textContent = message || '-';
+        els.errorModal.hidden = false;
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeErrorModal() {
+        els.errorModal.hidden = true;
+        document.body.style.overflow = '';
+      }
+
+      function summaryCols(kind) {
+        return [
+          { label: kind, render: row => `<div><div>${esc(row.name)}</div><div class="row-meta"><span>${esc(row.providerType || row.vendorName || '')}</span><span>${esc(row.vendorName || row.channelName || row.email || '')}</span></div></div>` },
+          { label: '状态', render: row => `<span class="status ${statusClass(row.status)}">${esc(row.status)} / ${esc(row.score)}</span>` },
+          { label: '成功率', render: row => `${pct(row.successRate)}<div class="muted">最近窗口 ${pct(row.recentRate)}</div>` },
+          { label: '请求', render: row => `${number(row.total)}<div class="muted">成功 ${number(row.success)} / 失败 ${number(row.failure)}</div>` },
+          { label: 'Token', render: row => `${formatTokens(row.totalTokens)}<div class="muted">输入 ${formatTokens(row.inputTokens)} / 输出 ${formatTokens(row.outputTokens)}</div><div class="muted">推理 ${formatTokens(row.reasoningTokens)} / 缓存 ${formatTokens(row.cachedTokens)}</div><div class="muted">均次 ${formatTokens(row.avgTokensPerRequest)}</div>` },
+          { label: '延迟', render: row => `${latency(row.avgLatencyMs)}<div class="muted">P95 ${latency(row.p95LatencyMs)}</div>` },
+          { label: '失败信号', render: row => `<div class="compact-cell">${esc(row.consecutiveFailures)} 次连续失败</div>${renderErrorPreview(row.lastError || '-', row.lastErrorFull || row.lastError || '-')}` },
+          { label: '最近活动', render: row => `<div>${timeAgo(row.lastSeenAtMs)}</div><div class="muted">最后成功 ${timeAgo(row.lastSuccessAtMs)}</div>` }
+        ];
+      }
+
+      async function post(path) {
+        const response = await fetch(path, { method: 'POST' });
+        if (!response.ok) throw new Error(await response.text());
+        return response.json();
+      }
+
+      async function load() {
+        const params = new URLSearchParams({ search: els.search.value || '', window: els.window.value || '1h' });
+        const response = await fetch('/api/dashboard?' + params.toString());
+        const data = await response.json();
+
+        const totals = data.overview.tokens || {};
+        els.tokenTotal.textContent = formatTokens(totals.totalTokens || 0);
+        els.tokenInput.textContent = `输入 ${formatTokens(totals.inputTokens || 0)}`;
+        els.tokenOutput.textContent = `输出 ${formatTokens(totals.outputTokens || 0)}`;
+        els.tokenReasoning.textContent = `推理 ${formatTokens(totals.reasoningTokens || 0)}`;
+        els.tokenCached.textContent = `缓存 ${formatTokens(totals.cachedTokens || 0)}`;
+
+        els.channels.innerHTML = renderTable(data.channels, summaryCols('线路'));
+        els.accounts.innerHTML = renderTable(data.accounts, summaryCols('账号'), '当前窗口内暂无 OAuth / Auth File 账号事件');
+        els.events.innerHTML = renderTable(data.recentEvents, [
+          { label: '时间', render: row => `<div class="nowrap">${timeAgo(row.timestampMs)}</div>` },
+          { label: '渠道 / 账号', render: row => `<div>${esc(row.channelName)}</div><div class="muted">${esc(row.accountName || '')}</div>` },
+          { label: '供应商', render: row => esc(row.vendorName) },
+          { label: '模型', render: row => esc(row.model) },
+          { label: '状态', render: row => row.failed ? `<span class="status critical">失败 ${esc(row.statusCode || '')}</span>` : `<span class="status healthy">成功</span>` },
+          { label: 'Token', render: row => `${formatTokens(row.totalTokens)}<div class="muted">输入 ${formatTokens(row.inputTokens)} / 输出 ${formatTokens(row.outputTokens)}</div><div class="muted">推理 ${formatTokens(row.reasoningTokens)} / 缓存 ${formatTokens(row.cachedTokens)}</div>` },
+          { label: '延迟', render: row => latency(row.latencyMs) },
+          { label: '错误', render: row => renderErrorPreview(row.error || '-', row.errorFull || row.error || '-') }
+        ]);
+      }
+
+      let timer = null;
+      function schedule() {
+        clearTimeout(timer);
+        timer = setTimeout(load, 200);
+      }
+      els.search.addEventListener('input', schedule);
+      els.window.addEventListener('change', load);
+      els.refresh.addEventListener('click', load);
+      els.pollNow.addEventListener('click', async () => { await post('/api/poll-now'); await load(); });
+      els.refreshMappings.addEventListener('click', async () => { await post('/api/refresh-mappings'); await load(); });
+      els.errorModalClose.addEventListener('click', closeErrorModal);
+      els.errorModal.addEventListener('click', (event) => {
+        if (event.target === els.errorModal) closeErrorModal();
+      });
+      document.addEventListener('click', (event) => {
+        const trigger = event.target.closest('.js-show-error');
+        if (!trigger) return;
+        openErrorModal(decodeData(trigger.dataset.error));
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !els.errorModal.hidden) closeErrorModal();
+      });
+      load();
+      setInterval(load, 10000);
+    </script>
+  </body>
+</html>
