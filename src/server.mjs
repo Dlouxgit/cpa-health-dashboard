@@ -97,8 +97,8 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(config.port, '127.0.0.1', () => {
-  console.log(`CPA Health Dashboard listening on http://127.0.0.1:${config.port}`);
+server.listen(config.port, config.listenHost, () => {
+  console.log(`CPA Health Dashboard listening on http://${config.listenHost}:${config.port}`);
 });
 
 process.on('SIGINT', shutdown);

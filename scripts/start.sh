@@ -26,6 +26,7 @@ if kill -0 "$PID" 2>/dev/null; then
   echo "log: $LOG_FILE"
 else
   echo "failed to start"
+  rm -f "$PID_FILE"
   cat "$LOG_FILE" || true
   exit 1
 fi

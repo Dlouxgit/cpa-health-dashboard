@@ -10,7 +10,8 @@ It consumes CPA `usage-queue`, stores request events in local SQLite, and provid
 - **完整错误弹窗**
 - **当前窗口 Token 汇总**
 
-> `usage-queue` 是**消费型队列**。同一时间应只有一个 collector 消费它。
+> ⚠️ `usage-queue` 是**消费型队列**。同一时间应只有一个 collector 消费它。  
+> 如果你手动请求 `/v0/management/usage-queue`，那一批事件会被直接消费掉，Dashboard 后续将看不到这批数据。
 
 ---
 
@@ -56,8 +57,12 @@ It consumes CPA `usage-queue`, stores request events in local SQLite, and provid
 
 ## Requirements
 
-- Node.js **22+**
+- Node.js **22.22.1+**（推荐）
+- 或直接使用 **Docker**
 - 一个已启用 Management API 的 `CLIProxyAPI / CPA`
+
+> `node:sqlite` 在较早的 22.x 小版本上可能不可用。  
+> 如果你本地环境不是 **Node 22.22.1+**，建议直接使用 Docker。
 
 ---
 
@@ -105,6 +110,7 @@ Client
 
 ```bash
 export PORT=18317
+export HOST=127.0.0.1
 export CPA_BASE_URL=http://127.0.0.1:8317
 export CPA_MANAGEMENT_KEY=replace-me
 export DB_PATH=./data/health-dashboard.sqlite
@@ -117,6 +123,15 @@ export RECENT_WINDOW_MINUTES=15
 ### Local config file
 
 复制 `config.example.json` 为 `config.local.json`，填入你的本地配置。
+
+关键字段说明：
+
+- `port`: 监听端口
+- `listenHost`: 监听地址
+  - 本机直接运行建议用 `127.0.0.1`
+  - Docker 运行建议用 `0.0.0.0`
+- `cpaBaseUrl`: CPA 管理接口地址
+- `managementKey`: CPA Management Key
 
 ---
 
@@ -162,13 +177,24 @@ node src/server.mjs
 ```bash
 docker build -t cpa-health-dashboard .
 
-docker run -d   --name cpa-health-dashboard   -p 18317:18317   -e CPA_BASE_URL=http://host.docker.internal:8317   -e CPA_MANAGEMENT_KEY=replace-me   -e DB_PATH=/app/data/health-dashboard.sqlite   -v $(pwd)/data:/app/data   --add-host=host.docker.internal:host-gateway   cpa-health-dashboard
+docker run -d \
+  --name cpa-health-dashboard \
+  -p 18317:18317 \
+  -e HOST=0.0.0.0 \
+  -e CPA_BASE_URL=http://host.docker.internal:8317 \
+  -e CPA_MANAGEMENT_KEY=replace-me \
+  -e DB_PATH=/app/data/health-dashboard.sqlite \
+  -v "$(pwd)/data:/app/data" \
+  --add-host=host.docker.internal:host-gateway \
+  cpa-health-dashboard
 ```
 
 ### Docker Compose
 
 ```bash
-# 先把 docker-compose.yml 里的 CPA_MANAGEMENT_KEY 改成你自己的值
+# 推荐：
+# 1. 复制 .env.example 为 .env
+# 2. 把 CPA_MANAGEMENT_KEY 改成你自己的值
 docker compose up -d --build
 ```
 
@@ -176,7 +202,16 @@ docker compose up -d --build
 
 - 如果 CPA 跑在宿主机，容器里通常用 `http://host.docker.internal:8317`
 - 如果 CPA 跑在别的容器里，请把 `CPA_BASE_URL` 改成对应容器服务名
+- Docker 模式下监听地址应为 `HOST=0.0.0.0`
 - `usage-queue` 是消费型队列，请不要让多个 collector 同时连接同一个 CPA
+
+### Example `.env` workflow
+
+```bash
+cp .env.example .env
+# edit .env and set your CPA_MANAGEMENT_KEY
+docker compose up -d --build
+```
 
 ## Import history from CPA-Manager
 

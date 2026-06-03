@@ -13,6 +13,7 @@ export function loadConfig() {
   const configPath = path.join(projectRoot, 'config.local.json');
   const raw = readJsonFile(configPath, {});
   const port = safeInteger(process.env.PORT || raw.port, 18317);
+  const listenHost = safeString(process.env.HOST || process.env.LISTEN_HOST || raw.listenHost || '127.0.0.1');
   const cpaBaseUrl = safeString(process.env.CPA_BASE_URL || raw.cpaBaseUrl || 'http://127.0.0.1:8317').replace(/\/$/, '');
   const managementKey = safeString(process.env.CPA_MANAGEMENT_KEY || raw.managementKey);
   const dbPathRaw = safeString(process.env.DB_PATH || raw.dbPath || './data/health-dashboard.sqlite');
@@ -26,6 +27,7 @@ export function loadConfig() {
     projectRoot,
     configPath,
     port,
+    listenHost,
     cpaBaseUrl,
     managementKey,
     dbPath,

@@ -6,14 +6,15 @@ services:
     ports:
       - "18317:18317"
     environment:
-      PORT: "18317"
-      CPA_BASE_URL: "http://host.docker.internal:8317"
-      CPA_MANAGEMENT_KEY: "replace-me"
-      DB_PATH: "/app/data/health-dashboard.sqlite"
-      POLL_INTERVAL_MS: "1000"
-      QUEUE_BATCH_SIZE: "100"
-      MAPPING_REFRESH_MS: "300000"
-      RECENT_WINDOW_MINUTES: "15"
+      PORT: "${PORT:-18317}"
+      HOST: "${HOST:-0.0.0.0}"
+      CPA_BASE_URL: "${CPA_BASE_URL:-http://host.docker.internal:8317}"
+      CPA_MANAGEMENT_KEY: "${CPA_MANAGEMENT_KEY:?missing CPA_MANAGEMENT_KEY}"
+      DB_PATH: "${DB_PATH:-/app/data/health-dashboard.sqlite}"
+      POLL_INTERVAL_MS: "${POLL_INTERVAL_MS:-1000}"
+      QUEUE_BATCH_SIZE: "${QUEUE_BATCH_SIZE:-100}"
+      MAPPING_REFRESH_MS: "${MAPPING_REFRESH_MS:-300000}"
+      RECENT_WINDOW_MINUTES: "${RECENT_WINDOW_MINUTES:-15}"
     volumes:
       - ./data:/app/data
     extra_hosts:

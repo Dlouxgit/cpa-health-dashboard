@@ -9,6 +9,16 @@ fi
 PID=$(cat "$PID_FILE" || true)
 if [[ -n "${PID:-}" ]] && kill -0 "$PID" 2>/dev/null; then
   kill "$PID"
+  for _ in $(seq 1 30); do
+    if ! kill -0 "$PID" 2>/dev/null; then
+      break
+    fi
+    sleep 0.2
+  done
+  if kill -0 "$PID" 2>/dev/null; then
+    echo "process did not exit in time: pid=$PID"
+    exit 1
+  fi
   echo "stopped: pid=$PID"
 else
   echo "stale pid file"

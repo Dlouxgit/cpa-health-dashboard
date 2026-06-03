@@ -1,5 +1,6 @@
 {
   "port": 18317,
+  "listenHost": "127.0.0.1",
   "cpaBaseUrl": "http://127.0.0.1:8317",
   "managementKey": "replace-me",
   "dbPath": "./data/health-dashboard.sqlite",

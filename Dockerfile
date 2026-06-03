@@ -13,6 +13,7 @@ COPY LICENSE ./LICENSE
 RUN mkdir -p /app/data && chmod +x /app/scripts/*.sh
 
 ENV PORT=18317 \
+    HOST=0.0.0.0 \
     CPA_BASE_URL=http://host.docker.internal:8317 \
     DB_PATH=/app/data/health-dashboard.sqlite \
     POLL_INTERVAL_MS=1000 \
